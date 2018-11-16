@@ -13,13 +13,10 @@ import android.os.Bundle;
 
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.enigmadongle.enigmaphone.dongle.CDCSerialDeviceSync;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -27,9 +24,9 @@ import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
-    private CDCSerialDeviceSync serialDevice = null;
+    private UsbSerialDevice serialDevice = null;
     private TextView console = null;
-    private byte[] readBuff = new byte[5];
+    private long send = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,57 +40,53 @@ public class MainActivity extends AppCompatActivity {
         connectDevice(getApplicationContext());
     }
 
-    public void connectDevice(Context context) {
-        PendingIntent mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent("com.android.example.USB_PERMISSION"), 0);
-        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+    public void connectDevice(final Context context) {
+        final PendingIntent mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent("com.android.example.USB_PERMISSION"), 0);
+        final Handler handler = new Handler();
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+                HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+                Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
 
-        while (deviceIterator.hasNext()) {
-            UsbDevice device = deviceIterator.next();
-            manager.requestPermission(device, mPermissionIntent);
-            UsbDeviceConnection usbConnection = manager.openDevice(device);
+                while (deviceIterator.hasNext()) {
+                    UsbDevice device = deviceIterator.next();
+                    manager.requestPermission(device, mPermissionIntent);
+                    UsbDeviceConnection usbConnection = manager.openDevice(device);
 
-            String conn = usbConnection.toString();
+                    serialDevice = UsbSerialDevice.createUsbSerialDevice(device, usbConnection);
 
-            Toast.makeText(context, conn, Toast.LENGTH_SHORT).show();
+                    serialDevice.open();
+                    serialDevice.debug(false);
+                    serialDevice.setBaudRate(19200);
+                    serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+                    serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+                    serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
 
-            serialDevice = new CDCSerialDeviceSync(device, usbConnection);
-
-            serialDevice.syncOpen();
-            serialDevice.debug(false);
-            serialDevice.setBaudRate(115200);
-            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-
-            final Handler handler = new Handler();
-
-            final Runnable r = new Runnable() {
-                public void run() {
-
-                    int status = serialDevice.syncRead(readBuff, 30);
-                    if (status >= 0)
-                        console.append(new String(readBuff));
-
-                    handler.post(this);
+                    serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
+                        @Override
+                        public void onReceivedData(byte[] arg0)
+                        {
+                            long actual = System.currentTimeMillis();
+                            console.append(new String(arg0) + ":  " + (actual - send));
+                        }
+                    });
                 }
-            };
-
-            handler.post(r);
-
-        }}
+            }
+        };
+        handler.post(runnable);
+    }
 
     public void sendToSerial(View view){
         final Handler handler = new Handler();
         final Runnable r = new Runnable() {
             public void run() {
-                serialDevice.syncWrite("10".getBytes(), 30);
+                send = System.currentTimeMillis();
+                serialDevice.write("10".getBytes());
                 console.append("10\n");
             }
         };
         handler.post(r);
-
-
     }
 }
