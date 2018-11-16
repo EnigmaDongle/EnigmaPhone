@@ -36,15 +36,21 @@
         android:layout_toEndOf="@+id/buttonStart" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:id="@+id/textView"
-        android:layout_below="@+id/buttonSend"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/editText"
+        android:layout_width="wrap_content"
+        android:layout_height="362dp"
+        android:layout_below="@+id/ipAddr"
         android:layout_alignEnd="@+id/editText"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignRight="@+id/editText"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginBottom="2dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -57,12 +63,26 @@
         android:onClick="onClickStop"/>
 
     <Button
+        android:id="@+id/buttonConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Clear"
-        android:id="@+id/buttonClear"
         android:layout_below="@+id/editText"
-        android:layout_toRightOf="@+id/buttonStop"
         android:layout_toEndOf="@+id/buttonStop"
-        android:onClick="onClickClear"/>
+        android:layout_toRightOf="@+id/buttonStop"
+        android:onClick="onClickConnectServer"
+        android:text="Connect" />
+
+    <EditText
+        android:id="@+id/ipAddr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/buttonStart"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginEnd="-1dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="192.168.43.95" />
 </RelativeLayout>
