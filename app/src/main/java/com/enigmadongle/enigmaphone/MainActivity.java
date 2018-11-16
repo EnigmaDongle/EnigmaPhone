@@ -19,6 +19,8 @@ import android.widget.TextView;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +46,7 @@ public class MainActivity extends Activity {
         public void onReceivedData(byte[] arg0) {
             String data =  new String(arg0);
             if (isConnectionReady)
-                connector.sendMessage(data);
+                serialPort.write(data.getBytes());
         }
     };
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
@@ -56,16 +58,49 @@ public class MainActivity extends Activity {
                     connection = usbManager.openDevice(device);
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
-                        if (serialPort.open()) { //Set Serial Connection Parameters.
+                        if (serialPort.syncOpen()) { //Set Serial Connection Parameters.
                             setUiEnabled(true);
-                            serialPort.setBaudRate(115200);
-                            serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                            serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                            serialPort.setParity(UsbSerialInterface.PARITY_NONE);
-                            serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                            serialPort.read(mCallback);
+//                            serialPort.setBaudRate(921600);
+//                            serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
+//                            serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
+//                            serialPort.setParity(UsbSerialInterface.PARITY_NONE);
+//                            serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
                             tvAppend(textView, "Serial Connection Opened!\n");
                             isSerialReady = true;
+
+                            Thread echo = new Thread(new Runnable() {
+                                final int bufferSize = 256;
+                                @Override
+                                public void run() {
+                                    byte[] rollingBuffer = new byte[bufferSize];
+                                    int bytesRead = 0;
+
+                                    while (true) {
+                                        byte[] readBuffer = new byte[bufferSize];
+                                        int readSize = serialPort.syncRead(readBuffer, 5);
+                                        if (readSize > 0) {
+                                            bytesRead += readSize;
+                                            Log.e("APP", "Read " + bytesRead + " bytes.");
+
+                                            ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize*2);
+                                            byteBuffer.put(Arrays.copyOfRange(rollingBuffer, 0, bytesRead - readSize));
+                                            byteBuffer.put(Arrays.copyOfRange(readBuffer, 0, readSize));
+
+                                            if(bytesRead >= bufferSize) {
+                                                byte[] chunk = Arrays.copyOfRange(byteBuffer.array(), 0, bufferSize);
+                                                serialPort.syncWrite(chunk, 5);
+                                                rollingBuffer = Arrays.copyOfRange(byteBuffer.array(), bufferSize, bytesRead);
+                                                bytesRead -= bufferSize;
+                                            } else {
+                                                rollingBuffer = Arrays.copyOfRange(byteBuffer.array(), 0, bytesRead);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+
+                            echo.start();
 
                         } else {
                             Log.d("SERIAL", "PORT NOT OPEN");
@@ -83,6 +118,8 @@ public class MainActivity extends Activity {
 
             }
         }
+
+
     };
 
 
