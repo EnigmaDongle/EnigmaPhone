@@ -19,6 +19,7 @@ import com.enigmadongle.enigmaphone.dongle.CDCSerialDeviceSync;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -26,9 +27,9 @@ import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
-    private UsbSerialDevice serialDevice = null;
+    private CDCSerialDeviceSync serialDevice = null;
     private TextView console = null;
-    private byte[] readBuff = new byte[1024];
+    private byte[] readBuff = new byte[5];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
             serialDevice = new CDCSerialDeviceSync(device, usbConnection);
 
-            serialDevice.open();
+            serialDevice.syncOpen();
             serialDevice.debug(false);
             serialDevice.setBaudRate(115200);
             serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
@@ -71,20 +72,28 @@ public class MainActivity extends AppCompatActivity {
             final Runnable r = new Runnable() {
                 public void run() {
 
-                    int status = serialDevice.syncRead(readBuff, 250);
+                    int status = serialDevice.syncRead(readBuff, 30);
                     if (status >= 0)
                         console.append(new String(readBuff));
 
-                    handler.postDelayed(this, 10);
+                    handler.post(this);
                 }
             };
 
-            handler.postDelayed(r, 10);
+            handler.post(r);
 
         }}
 
     public void sendToSerial(View view){
-        serialDevice.syncWrite("10".getBytes(), 0);
-        console.append("10\n");
+        final Handler handler = new Handler();
+        final Runnable r = new Runnable() {
+            public void run() {
+                serialDevice.syncWrite("10".getBytes(), 30);
+                console.append("10\n");
+            }
+        };
+        handler.post(r);
+
+
     }
 }
