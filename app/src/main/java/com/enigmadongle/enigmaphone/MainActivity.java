@@ -11,12 +11,10 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -27,9 +25,8 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
-    Button startButton, sendButton, connectButton, stopButton;
+    Button startButton, connectButton, stopButton;
     TextView textView;
-    EditText editText;
     UsbManager usbManager;
     UsbDevice device;
     UsbSerialDevice serialPort;
@@ -40,12 +37,14 @@ public class MainActivity extends Activity {
     Server server;
 
     Boolean isSerialReady = false;
+    Boolean isConnectionReady = false;
 
     UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
         public void onReceivedData(byte[] arg0) {
             String data =  new String(arg0);
-            connector.sendMessage(data);
+            if (isConnectionReady)
+                connector.sendMessage(data);
         }
     };
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
@@ -93,10 +92,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(USB_SERVICE);
         startButton = (Button) findViewById(R.id.buttonStart);
-        sendButton = (Button) findViewById(R.id.buttonSend);
         connectButton = (Button) findViewById(R.id.buttonConnect);
         stopButton = (Button) findViewById(R.id.buttonStop);
-        editText = (EditText) findViewById(R.id.editText);
         ipText = (EditText) findViewById(R.id.ipAddr);
         textView = (TextView) findViewById(R.id.textView);
 
@@ -109,15 +106,13 @@ public class MainActivity extends Activity {
 
         server = new Server();
         server.startServerSocket(this);
-
     }
 
     public void setUiEnabled(boolean bool) {
         startButton.setEnabled(!bool);
-        sendButton.setEnabled(bool);
         stopButton.setEnabled(bool);
+        connectButton.setEnabled(bool);
         textView.setEnabled(bool);
-
     }
 
     public void onClickStart(View view) {
@@ -132,13 +127,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void onClickSend(View view) {
-        String string = editText.getText().toString();
-        serialPort.write(string.getBytes());
-        tvAppend(textView, "\nData Sent : " + string + "\n");
-
-    }
-
     public void onClickStop(View view) {
         setUiEnabled(false);
         serialPort.close();
@@ -148,6 +136,7 @@ public class MainActivity extends Activity {
 
     public void onClickConnectServer(View view) {
         connector = new Connector(ipText.getText().toString());
+        isConnectionReady = true;
     }
 
     public void onSocketMessage(String msg){

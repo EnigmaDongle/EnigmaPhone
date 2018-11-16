@@ -19,7 +19,7 @@ public class Connector {
         ip = serverIp;
     }
 
-    public void sendMessage(final String msg) {
+    public void sendMessage (final String msg) {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -45,6 +45,7 @@ public class Connector {
 
                     out.close();
                     socket.close();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
