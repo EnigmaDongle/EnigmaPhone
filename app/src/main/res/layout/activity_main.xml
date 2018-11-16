@@ -5,16 +5,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
 
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/editText"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -25,44 +15,56 @@
         android:layout_alignParentStart="true"
         android:onClick="onClickStart"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Send"
-        android:id="@+id/buttonSend"
-        android:onClick="onClickSend"
-        android:layout_below="@+id/editText"
-        android:layout_toRightOf="@+id/buttonStart"
-        android:layout_toEndOf="@+id/buttonStart" />
-
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:id="@+id/textView"
-        android:layout_below="@+id/buttonSend"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/editText"
+        android:layout_width="wrap_content"
+        android:layout_height="362dp"
+        android:layout_below="@+id/ipAddr"
         android:layout_alignEnd="@+id/editText"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignRight="@+id/editText"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginRight="0dp"
+        android:layout_marginBottom="2dp" />
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop"
         android:id="@+id/buttonStop"
-        android:layout_below="@+id/editText"
-        android:layout_toRightOf="@+id/buttonSend"
-        android:layout_toEndOf="@+id/buttonSend"
-        android:onClick="onClickStop"/>
-
-    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Clear"
-        android:id="@+id/buttonClear"
         android:layout_below="@+id/editText"
-        android:layout_toRightOf="@+id/buttonStop"
+        android:layout_alignStart="@+id/buttonSend"
+        android:layout_marginStart="88dp"
+        android:layout_toRightOf="@+id/buttonSend"
+        android:onClick="onClickStop"
+        android:text="Stop" />
+
+    <Button
+        android:id="@+id/buttonConnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/editText"
+        android:layout_marginStart="0dp"
         android:layout_toEndOf="@+id/buttonStop"
-        android:onClick="onClickClear"/>
+        android:layout_toRightOf="@+id/buttonStop"
+        android:onClick="onClickConnectServer"
+        android:text="Connect" />
+
+    <EditText
+        android:id="@+id/ipAddr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/buttonStart"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginEnd="-1dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="192.168.43.95" />
 </RelativeLayout>

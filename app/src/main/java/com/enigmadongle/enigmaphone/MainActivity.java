@@ -19,33 +19,32 @@ import android.widget.TextView;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class MainActivity extends Activity {
     public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
-    Button startButton, sendButton, clearButton, stopButton;
+    Button startButton, connectButton, stopButton;
     TextView textView;
-    EditText editText;
     UsbManager usbManager;
     UsbDevice device;
     UsbSerialDevice serialPort;
     UsbDeviceConnection connection;
+    EditText ipText;
+
+    Connector connector;
+    Server server;
+
+    Boolean isSerialReady = false;
+    Boolean isConnectionReady = false;
 
     UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
         public void onReceivedData(byte[] arg0) {
-            String data = null;
-            try {
-                data = new String(arg0, "UTF-8");
-                data.concat("/n");
-                tvAppend(textView, data);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-
-
+            String data =  new String(arg0);
+            if (isConnectionReady)
+                connector.sendMessage(data);
         }
     };
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() { //Broadcast Receiver to automatically start and stop the Serial connection.
@@ -59,13 +58,14 @@ public class MainActivity extends Activity {
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
                             setUiEnabled(true);
-                            serialPort.setBaudRate(9600);
+                            serialPort.setBaudRate(115200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                             serialPort.read(mCallback);
                             tvAppend(textView, "Serial Connection Opened!\n");
+                            isSerialReady = true;
 
                         } else {
                             Log.d("SERIAL", "PORT NOT OPEN");
@@ -83,9 +83,8 @@ public class MainActivity extends Activity {
 
             }
         }
-
-        ;
     };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,11 +92,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(USB_SERVICE);
         startButton = (Button) findViewById(R.id.buttonStart);
-        sendButton = (Button) findViewById(R.id.buttonSend);
-        clearButton = (Button) findViewById(R.id.buttonClear);
+        connectButton = (Button) findViewById(R.id.buttonConnect);
         stopButton = (Button) findViewById(R.id.buttonStop);
-        editText = (EditText) findViewById(R.id.editText);
+        ipText = (EditText) findViewById(R.id.ipAddr);
         textView = (TextView) findViewById(R.id.textView);
+
         setUiEnabled(false);
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
@@ -105,15 +104,15 @@ public class MainActivity extends Activity {
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
 
-
+        server = new Server();
+        server.startServerSocket(this);
     }
 
     public void setUiEnabled(boolean bool) {
         startButton.setEnabled(!bool);
-        sendButton.setEnabled(bool);
         stopButton.setEnabled(bool);
+        connectButton.setEnabled(bool);
         textView.setEnabled(bool);
-
     }
 
     public void onClickStart(View view) {
@@ -126,15 +125,6 @@ public class MainActivity extends Activity {
                 usbManager.requestPermission(device, pi);
             }
         }
-
-
-    }
-
-    public void onClickSend(View view) {
-        String string = editText.getText().toString();
-        serialPort.write(string.getBytes());
-        tvAppend(textView, "\nData Sent : " + string + "\n");
-
     }
 
     public void onClickStop(View view) {
@@ -144,8 +134,15 @@ public class MainActivity extends Activity {
 
     }
 
-    public void onClickClear(View view) {
-        textView.setText(" ");
+    public void onClickConnectServer(View view) {
+        connector = new Connector(ipText.getText().toString());
+        isConnectionReady = true;
+    }
+
+    public void onSocketMessage(String msg){
+        tvAppend(textView, "Received from network: " + msg.length());
+        if (isSerialReady)
+            serialPort.write(msg.getBytes());
     }
 
     private void tvAppend(TextView tv, CharSequence text) {
@@ -155,6 +152,8 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if (ftv.getLineCount() > 25)
+                    ftv.setText("");
                 ftv.append(ftext);
             }
         });
